@@ -77,7 +77,8 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
     
     if dataset.loader in ['technicolor', 'dynerf']:
         loss_list = np.zeros([num_traincams + 1, scene.maxtime]) + 100
-        loss_list[10,:] = 0  # test cam
+        if dataset.loader == 'technicolor':
+            loss_list[10,:] = 0  # test cam
     else:
         loss_list = np.zeros([num_traincams, scene.maxtime]) + 100
     
