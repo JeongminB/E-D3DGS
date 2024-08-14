@@ -1,0 +1,4 @@
+# ninja log v5
+2	6592	1723370167454420786	/home/jmin/nas_jmin/2024_E-D3DGS/_ours_github_code/submodules/simple-knn/build/temp.linux-x86_64-cpython-37/simple_knn.o	b1fde627e658a9d3
+1	14581	1723370175412420312	/home/jmin/nas_jmin/2024_E-D3DGS/_ours_github_code/submodules/simple-knn/build/temp.linux-x86_64-cpython-37/ext.o	e4797234796f8872
+2	28447	1723370189330419482	/home/jmin/nas_jmin/2024_E-D3DGS/_ours_github_code/submodules/simple-knn/build/temp.linux-x86_64-cpython-37/spatial.o	f75bb56f320dde1f
