@@ -11,7 +11,7 @@ Hahyun Lee<sup>2 </sup>, Gun Bang<sup>2</sup>, [Youngjung Uh](https://github.com
 
 ---
 
-Official repository for <a href="https://arxiv.org/abs/2404.03613">"Per-Gaussian Embedding-Based Deformation for Deformable 3D Gaussian Splatting"</a><be>
+Official repository for <a href="https://arxiv.org/abs/2404.03613">"Per-Gaussian Embedding-Based Deformation for Deformable 3D Gaussian Splatting"</a><be>. <br>
 Our approach employs per-Gaussian latent embeddings to predict deformation for each Gaussian and achieves a clearer representation of dynamic motion.
 
 ![Alt Text](https://github.com/JeongminB/E-D3DGS/blob/main/teaser.gif)
