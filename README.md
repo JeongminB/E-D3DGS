@@ -4,7 +4,7 @@
 [![project_page](https://img.shields.io/badge/project_page-68BC71)](https://jeongminb.github.io/e-d3dgs/)
 
 [Jeongmin Bae](https://jeongminb.github.io/)<sup>1*</sup>, [Seoha Kim](https://seoha-kim.github.io/)<sup>1*</sup>, [Youngsik Yun](https://bbangsik13.github.io/)<sup>1</sup>, </br>
-Hahyun Lee<sup>2 </sup>, Gun Bang<sup>2</sup>, [Youngjung Uh](https://github.com/youngjung)<sup>1†</sup>
+Hahyun Lee<sup>2 </sup>, Gun Bang<sup>2</sup>, [Youngjung Uh](https://github.com/yj-uh)<sup>1†</sup>
 
 <sup>1</sup>Yonsei University &emsp; <sup>2</sup>Electronics and Telecommunications Research Institute (ETRI)
 <br><sup>\*</sup> Equal Contributions &emsp; <sup>†</sup> Corresponding Author
