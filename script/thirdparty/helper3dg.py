@@ -24,9 +24,9 @@ import shutil
 
 sys.path.append("./thirdparty/gaussian_splatting")
 
-from scripts.thirdparty.general_utils import safe_state
+from script.thirdparty.general_utils import safe_state
 from argparse import ArgumentParser, Namespace
-from scripts.thirdparty.arguments import ModelParams, PipelineParams, OptimizationParams, get_combined_args
+from script.thirdparty.arguments import ModelParams, PipelineParams, OptimizationParams, get_combined_args
 
 
 def getparser():
