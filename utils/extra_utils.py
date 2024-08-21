@@ -21,10 +21,10 @@ def weighted_l2_loss_v2(x, y, w):
 
 
 def image_sampler(method="", loader=None, loss_list=None, total_num_frames=50, batch_size=1, cam_no=None, frame_no=None):
-    if cam_no == None:
+    if type(cam_no) == type(None):
         cam_no = np.random.choice(range(len(loader) // total_num_frames), size=batch_size)
 
-    if frame_no == None:
+    if type(frame_no) == type(None):
         if method == "random":
             frame_no = np.random.choice(range(total_num_frames), size=batch_size)
         elif method == "by_error":
