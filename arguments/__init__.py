@@ -109,6 +109,7 @@ class OptimizationParams(ParamGroup):
         self.deformation_lr_final = 0.000016
         self.deformation_lr_delay_mult = 0.01
         self.deformation_lr_max_steps = 60_000
+        self.batch_size = 1
 
         self.feature_lr = 0.0025
         self.feature_lr_div_factor = 20.0

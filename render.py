@@ -42,23 +42,26 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
     num_down_emb_f = hyperparam.min_embeddings    
     
     count = 0
+    total_time = 0
+    
     for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
-        # if idx == 0:time1 = time()
         if type(view.original_image) == type(None):
             view.load_image()
+        time1 = time()
         rendering = render(view, gaussians, pipeline, background, iter=iteration, num_down_emb_c=num_down_emb_c, num_down_emb_f=num_down_emb_f)["render"]
+        time2 = time()
+        total_time += (time2 - time1)
         render_images.append(to8b(rendering).transpose(1,2,0))
         torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(count) + ".png"))
-
         # render_list.append(rendering)
-        
+    
         if name in ["train", "test"]:
             gt = view.original_image[0:3, :, :]
             torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(count) + ".png"))
             # gt_list.append(gt)
         count +=1
-    # time2=time()
-    # print("FPS:",(len(views)-1)/(time2-time1))
+        
+    print("FPS:",(len(views)-1)/total_time)
     
     # count = 0
     # print("writing training images.")

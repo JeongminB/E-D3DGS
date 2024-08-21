@@ -30,8 +30,10 @@ def image_sampler(method="", loader=None, loss_list=None, total_num_frames=50, b
         elif method == "by_error":
             frame_no = get_idx_by_error(batch_size, loss_list)
     
-    idx = cam_no * total_num_frames + frame_no
-    sampled_image = [loader[idx[0]]]
+    # idx = cam_no * total_num_frames + frame_no
+    # sampled_image = [loader[idx[0]]]
+    # inds = [c * total_num_frames + f for c, f in zip(cam_no, frame_no)]
+    sampled_image = [loader[c * total_num_frames + f] for c, f in zip(cam_no, frame_no)]
     return sampled_image, cam_no, frame_no
 
 

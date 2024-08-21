@@ -75,20 +75,21 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
 
         last_camera_index = 0
     
-    if dataset.loader in ['technicolor', 'dynerf']:
-        loss_list = np.zeros([num_traincams + 1, scene.maxtime]) + 100
-        if dataset.loader == 'technicolor':
-            loss_list[10,:] = 0  # test cam
-    else:
-        loss_list = np.zeros([num_traincams, scene.maxtime]) + 100
-    
+    cam_no_list = list(set(c.cam_no for c in train_cams))
+    print("train cameras:", cam_no_list)
+    if dataset.loader in ['nerfies']:  # single-view
+        loss_list = np.zeros([num_traincams, scene.maxtime]) + 100  # pick frames that have not yet been sampled
+    else:  # n3v, technicolor, etc.
+        loss_list = np.zeros([max(cam_no_list) + 1, scene.maxtime])
+        for c in cam_no_list:
+            loss_list[c] = 100
 
     ssim_cnt = 0
     sampled_frame_no = None
     prev_num_pts = 0
 
     # We sort training images to sample image of the desired camera number and frame.
-    if dataset.loader in ['technicolor', 'dynerf']:
+    if dataset.loader not in ['nerfies']:
         train_cams = sorted(train_cams, key=lambda x: (x.cam_no, x.frame_no))
 
     viewpoint_stack = train_cams
@@ -104,18 +105,22 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
         if iteration % 1000 == 0:
             gaussians.oneupSHdegree()
 
+        # opt.batch_size = 2
         ### Instead of the complex process below, simply training on random frames will also work well. If you follow this, comment out the `train_cams` sorting process above.
         if dataset.loader == 'nerfies':
-            frame_set = np.random.choice(range(math.ceil(len(viewpoint_stack) / 2)), size=1)[0]
-            viewpoint_cams = [viewpoint_stack[(frame_set*2) % scene.maxtime], viewpoint_stack[(frame_set*2 + 1) % scene.maxtime]]
+            frame_set = np.random.choice(range(math.ceil(len(viewpoint_stack) / 2)), size=max(opt.batch_size // 2, 1))
+            viewpoint_cams = [viewpoint_stack[(f*2) % scene.maxtime] for f in frame_set] + \
+                             [viewpoint_stack[(f*2+1) % scene.maxtime] for f in frame_set]
         else:
             # Pick camera
             method = "random" if iteration < opt.random_until or iteration % 2 == 1 else "by_error"
 
-            cam_no = sample_camera(cam_dists, last_camera_index, min_dist)
-            last_camera_index = cam_no
+            cam_no = []
+            for _ in range(opt.batch_size):
+                last_camera_index = sample_camera(cam_dists, last_camera_index, min_dist)
+                cam_no.append(last_camera_index)
             
-            viewpoint_cams, sampled_cam_no, sampled_frame_no = image_sampler(method=method, loader=viewpoint_stack, loss_list=loss_list, \
+            viewpoint_cams, sampled_cam_no, sampled_frame_no = image_sampler(method=method, loader=viewpoint_stack, loss_list=loss_list, batch_size=opt.batch_size, \
                 cam_no=cam_no, frame_no=sampled_frame_no, total_num_frames=scene.maxtime)
             if iteration >= opt.random_until and opt.num_multiview_ssim > 0 and iteration % 50 < opt.num_multiview_ssim:
                 sampled_frame_no = sampled_frame_no  # reuse sampled frame (num_multiview_ssim) times
@@ -131,14 +136,19 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
         radii_list = []
         visibility_filter_list = []
         viewspace_point_tensor_list = []
+        cam_no_list, frame_no_list = [], []
         for viewpoint_cam in viewpoint_cams:
             if type(viewpoint_cam.original_image) == type(None):
                 viewpoint_cam.load_image()  # for lazy loading (to avoid OOM issue)
             cam_no = viewpoint_cam.cam_no
             frame_no = viewpoint_cam.frame_no
+            cam_no_list.append(cam_no)
+            frame_no_list.append(frame_no)
+            # print(cam_no, frame_no, viewpoint_cam.image_name)  # for test
             render_pkg = render(viewpoint_cam, gaussians, pipe, background, cam_no=cam_no, iter=iteration, \
                 num_down_emb_c=hyper.min_embeddings, num_down_emb_f=hyper.min_embeddings)
             image, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
+
             images.append(image.unsqueeze(0))
             gt_image = viewpoint_cam.original_image.cuda()
             gt_images.append(gt_image.unsqueeze(0))
@@ -152,7 +162,9 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
         gt_image_tensor = torch.cat(gt_images,0)
 
         
-        Ll1 = l1_loss(image_tensor, gt_image_tensor)
+        Ll1 = l1_loss(image_tensor, gt_image_tensor, keepdim=True)
+        Ll1_items = Ll1.detach()
+        Ll1 = Ll1.mean()
         if opt.lambda_dssim > 0. and sampled_frame_no != None or (method == "by_error" and (iteration % 10 == 0) and opt.num_multiview_ssim==0):
             ssim_value, ssim_map = ssim(image_tensor, gt_image_tensor)
             Lssim = (1 - ssim_value) / 2
@@ -161,7 +173,9 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
             loss = Ll1
 
         psnr_ = psnr(image_tensor, gt_image_tensor).mean().double()
-        loss_list[cam_no, frame_no] = Ll1.item()
+        for i in range(len(Ll1_items)):
+            loss_list[cam_no_list[i], frame_no_list[i]] = Ll1_items[i].item()
+            # print(i, cam_no_list[i], frame_no_list[i])
 
         # use l1 instead of opacity reset
         if opt.opacity_l1_coef_fine > 0.:
@@ -338,7 +352,7 @@ if __name__ == "__main__":
     safe_state(args.quiet)
 
     # Start GUI server, configure and run training
-    network_gui.init(args.ip, args.port)
+    # network_gui.init(args.ip, args.port)
     torch.autograd.set_detect_anomaly(args.detect_anomaly)
     training(lp.extract(args), hp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint, args.debug_from, args.expname)
 
