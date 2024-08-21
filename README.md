@@ -81,6 +81,7 @@ After running COLMAP, Neural 3D Video and Technicolor datasets are orginized as 
 
 ## Training
 
+If you want to train with 2x downsampled images, add `-r 2` to the command line.
 ``` bash
 # Train
 python train.py -s $GT_PATH/$SCENE --configs arguments/$DATASET/$CONFIG.py --model_path $OUTPUT_PATH --expname $DATASET/$SCENE
