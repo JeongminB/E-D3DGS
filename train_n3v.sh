@@ -1,6 +1,6 @@
 GPU=0
 PORT_BASE=6000
-GT_PATH=/home/jmin/nas_jmin/2024_E-D3DGS/e-d3dgs_colmap_test
+GT_PATH=path
 
 DATASET=dynerf
 SAVE_PATH=output
