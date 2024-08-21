@@ -38,7 +38,7 @@ We use `pytorch=1.13.1+cu116` in our environment.
 
 **Downloading Datasets:**  
 Please download datasets from their official websites : [HyperNerf](https://github.com/google/hypernerf/releases/tag/v0.1), [Neural 3D Video](https://github.com/facebookresearch/Neural_3D_Video) and [Technicolor](https://www.interdigital.com/data_sets/light-field-dataset) <br><br>
-- **Remove** 'cam13.mp4' and corresponding pose from <i>coffee_martini</i> scene in the Neural 3D Video dataset. <br>
+- <u>Remove</u> 'cam13.mp4' and corresponding pose from <i>coffee_martini</i> scene in the Neural 3D Video dataset. <br>
 - We split the entire <i>flame_salmon_1_split</i> scene into four 300-frame scenes.
 
 <br>
