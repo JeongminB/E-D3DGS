@@ -144,11 +144,9 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
             frame_no = viewpoint_cam.frame_no
             cam_no_list.append(cam_no)
             frame_no_list.append(frame_no)
-            # print(cam_no, frame_no, viewpoint_cam.image_name)  # for test
             render_pkg = render(viewpoint_cam, gaussians, pipe, background, cam_no=cam_no, iter=iteration, \
                 num_down_emb_c=hyper.min_embeddings, num_down_emb_f=hyper.min_embeddings)
             image, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
-            print(image.shape, viewpoint_cam.original_image.shape)
 
             images.append(image.unsqueeze(0))
             gt_image = viewpoint_cam.original_image.cuda()
@@ -176,7 +174,6 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
         psnr_ = psnr(image_tensor, gt_image_tensor).mean().double()
         for i in range(len(Ll1_items)):
             loss_list[cam_no_list[i], frame_no_list[i]] = Ll1_items[i].item()
-            # print(i, cam_no_list[i], frame_no_list[i])
 
         # use l1 instead of opacity reset
         if opt.opacity_l1_coef_fine > 0.:
