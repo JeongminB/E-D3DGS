@@ -33,7 +33,7 @@ class deform_network(nn.Module):
             self.weight = torch.nn.Parameter(torch.zeros(max_embeddings, self.temporal_embedding_dim))
         else:
             self.weight = torch.nn.Parameter(torch.normal(0., 0.01/np.sqrt(self.temporal_embedding_dim),size=(max_embeddings, self.temporal_embedding_dim)))
-        self.offsets = torch.nn.Parameter(torch.zeros((30, 1)))
+        self.offsets = torch.nn.Parameter(torch.zeros((30, 1)))  # hard coded the upper limit of the num cameras (adjust as necessary)
 
     def create_net(self):
         self.feature_out = [nn.Linear(self.temporal_embedding_dim + self.gaussian_embedding_dim, self.W)]
