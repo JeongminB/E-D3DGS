@@ -30,9 +30,9 @@ import pickle
 import sys 
 import argparse
 sys.path.append(".")
-from scripts.thirdparty.my_utils import posetow2c_matrcs, rotmat2qvec
-from scripts.thirdparty.pre_colmap import * 
-from scripts.thirdparty.helper3dg import getcolmapsinglen3d
+from script.thirdparty.my_utils import posetow2c_matrcs, rotmat2qvec
+from script.thirdparty.pre_colmap import * 
+from script.thirdparty.helper3dg import getcolmapsinglen3d
 
 
 

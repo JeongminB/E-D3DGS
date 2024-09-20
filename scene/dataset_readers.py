@@ -100,18 +100,15 @@ def readColmapCamerasDynerf(cam_extrinsics, cam_intrinsics, images_folder, near,
 
         if intr.model=="SIMPLE_PINHOLE":
             focal_length_x = intr.params[0]
-            FovY = focal2fov(focal_length_x / 2, height / 2)
-            FovX = focal2fov(focal_length_x / 2, width / 2)
+            FovY = focal2fov(focal_length_x, height)
+            FovX = focal2fov(focal_length_x, width)
         elif intr.model=="PINHOLE":
             focal_length_x = intr.params[0]
             focal_length_y = intr.params[1] 
-            FovY = focal2fov(focal_length_y / 2, height / 2)
-            FovX = focal2fov(focal_length_x / 2, width / 2)
+            FovY = focal2fov(focal_length_y, height)
+            FovX = focal2fov(focal_length_x, width)
         else:
             assert False, "Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!"
-
-        height = intr.height / 2
-        width = intr.width / 2
 
         for j in range(startime, startime+int(duration)):
             image_path = os.path.join(images_folder,f"images/{extr.name[:-4]}", "%04d.png" % j)
@@ -275,7 +272,7 @@ def readColmapSceneInfoDynerf(path, images, eval, duration=300, testonly=None):
 
     cam_infos_unsorted = readColmapCamerasDynerf(cam_extrinsics=cam_extrinsics, cam_intrinsics=cam_intrinsics, images_folder=path, near=near, far=far, duration=duration)    
     cam_infos = sorted(cam_infos_unsorted.copy(), key = lambda x : x.image_name)
-     
+    video_cam_infos = getSpiralColmap(cam_extrinsics=cam_extrinsics, cam_intrinsics=cam_intrinsics,near=near, far=far)
     train_cam_infos = [_ for _ in cam_infos if "cam00" not in _.image_name]
     test_cam_infos = [_ for _ in cam_infos if "cam00" in _.image_name]
 
@@ -307,7 +304,7 @@ def readColmapSceneInfoDynerf(path, images, eval, duration=300, testonly=None):
     scene_info = SceneInfo(point_cloud=pcd,
                            train_cameras=train_cam_infos,
                            test_cameras=test_cam_infos,
-                           video_cameras=test_cam_infos,
+                           video_cameras=video_cam_infos,
                            nerf_normalization=nerf_normalization,
                            ply_path=ply_path)
     return scene_info
@@ -403,3 +400,99 @@ sceneLoadTypeCallbacks = {
     "Nerfies": readHyperDataInfos,
     "Dynerf": readColmapSceneInfoDynerf,
 }
+
+# modify the code in https://github.com/hustvl/4DGaussians/blob/master/scene/neural_3D_dataset_NDC.py
+def normalize(v):
+    """Normalize a vector."""
+    return v / np.linalg.norm(v)
+
+def viewmatrix(z, up, pos):
+    vec2 = normalize(z)
+    vec1_avg = up
+    vec0 = normalize(np.cross(vec1_avg, vec2))
+    vec1 = normalize(np.cross(vec2, vec0))
+    m = np.eye(4)
+    m[:3] = np.stack([vec0, vec1, vec2, pos], 1)
+    return m
+
+def render_path_spiral(c2w, up, rads, zrate, N_rots=2, N=120):
+    render_poses = []
+
+    for theta in np.linspace(0.0, 2.0 * np.pi * N_rots, N + 1)[:-1]:
+        d = np.dot(
+            c2w[:3,:3],
+            np.array([np.cos(theta), np.sin(theta), 1.]) * rads
+        )
+        c = c2w[:3,3] + d
+        z = normalize(zrate * c2w[:3,2] - d)
+        render_poses.append(viewmatrix(z, up, c))
+    return render_poses
+
+def get_spiral(c2ws_all, near, far, rads_scale=0.25, N_views=120):
+    """
+    Generate a set of poses using spiral camera trajectory as validation poses.
+    """
+
+    # test cam is the center
+    c2w = c2ws_all[0,:3,:] 
+    up = c2ws_all[0, :3, 1]
+
+    # Find a reasonable "focus depth" for this dataset
+    dt = 0.75
+    zrate = (1.0 - dt) * (near + far)
+
+    # Get radii for spiral path
+    tt = c2ws_all[1:, :3, 3] - c2ws_all[0:1, :3, 3]
+    rads = np.percentile(np.abs(tt), 90, 0) * rads_scale
+
+    render_poses = render_path_spiral(
+        c2w, up, rads, zrate, N_rots=3, N=N_views
+    )
+    return np.stack(render_poses)
+
+
+def getSpiralColmap(cam_extrinsics, cam_intrinsics, near, far):
+    c2ws_all = {}
+    for idx, key in enumerate(cam_extrinsics): 
+        sys.stdout.write('\r')
+        sys.stdout.write("Reading camera {}/{}".format(idx+1, len(cam_extrinsics)))
+        sys.stdout.flush()
+
+        extr = cam_extrinsics[key]
+        intr = cam_intrinsics[extr.camera_id]
+        height = intr.height
+        width = intr.width
+
+        w2c = np.eye(4)
+        w2c[:3,:3] = qvec2rotmat(extr.qvec)
+        w2c[:3,3] = np.array(extr.tvec)
+        c2w = np.linalg.inv(w2c)
+        c2ws_all[key] = c2w[:3,:]
+    c2ws_all = np.stack([value for _, value in sorted(c2ws_all.items())])
+
+    if intr.model=="SIMPLE_PINHOLE":
+        focal_length_x = intr.params[0]
+        FovY = focal2fov(focal_length_x, height)
+        FovX = focal2fov(focal_length_x, width)
+    elif intr.model=="PINHOLE":
+        focal_length_x = intr.params[0]
+        focal_length_y = intr.params[1] 
+        FovY = focal2fov(focal_length_y, height)
+        FovX = focal2fov(focal_length_x, width)
+    else:
+        assert False, "Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!"
+
+    height = intr.height
+    width = intr.width
+    cam_infos = []
+    render_poses = get_spiral(c2ws_all,near,far,N_views=300)
+
+    for i,c2w in enumerate(render_poses):
+        w2c = np.linalg.inv(c2w)
+        R = np.transpose(w2c[:3,:3])  # R is stored transposed due to 'glm' in CUDA code
+        T = w2c[:3, 3]
+        image = None
+        cam_info = CameraInfo(uid=i, R=R, T=T, FovY=FovY, FovX=FovX, image=image, image_path=None, image_name=None, width=width, height=height, near=near, far=far, timestamp=i/(len(render_poses) - 1), pose=None, hpdirecitons=None, cxr=0.0, cyr=0.0)
+        cam_infos.append(cam_info)
+    sys.stdout.write('\n')
+    return cam_infos

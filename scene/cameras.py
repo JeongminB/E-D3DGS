@@ -131,6 +131,10 @@ class Camera(nn.Module):
         self.image_height = self.original_image.shape[1]
         if self.gt_alpha_mask is not None:
             self.original_image *= self.gt_alpha_mask.to(self.data_device)
+    
+    def set_image(self):
+        self.image_width = self.img_wh[0]
+        self.image_height = self.img_wh[1]
 
 
 class MiniCam:

@@ -92,6 +92,13 @@ class Scene:
             elif loader in ["nerfies"]:
                 self.test_cameras[resolution_scale] = cameraList_from_camInfosHyper(scene_info.test_cameras, resolution_scale, args)
 
+            print("Loading Video Cameras")
+            if loader  in ["technicolorvalid", "technicolor", "dynerf", "dynerfvalid"]: # we need gt for metrics
+                self.video_cameras[resolution_scale] = cameraList_from_camInfosv2(scene_info.video_cameras, resolution_scale, args)
+            elif loader in ["nerfies"]:
+                self.video_cameras[resolution_scale] = cameraList_from_camInfosHyper(scene_info.video_cameras, resolution_scale, args)
+
+
         if loader not in ["nerfies", "dynerf"]:
             for cam in self.test_cameras[resolution_scale]:
                 if cam.image_name[:4] not in raydict and cam.rayo is not None:
@@ -137,4 +144,4 @@ class Scene:
     def getTestCameras(self, scale=1.0):
         return self.test_cameras[scale]
     def getVideoCameras(self, scale=1.0):
-        return self.video_cameras
+        return self.video_cameras[scale]

@@ -46,7 +46,10 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
     
     for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
         if type(view.original_image) == type(None):
-            view.load_image()
+            if name == 'video':
+                view.set_image()
+            else:
+                view.load_image()
         time1 = time()
         rendering = render(view, gaussians, pipeline, background, iter=iteration, num_down_emb_c=num_down_emb_c, num_down_emb_f=num_down_emb_f)["render"]
         time2 = time()
@@ -91,6 +94,8 @@ def render_sets(dataset : ModelParams, hyperparam, opt, iteration : int, pipelin
             render_set(dataset.model_path, "train", scene.loaded_iter, scene.getTrainCameras(), gaussians, pipeline, background, hyperparam=hyperparam)
         if not skip_test:
             render_set(dataset.model_path, "test", scene.loaded_iter, scene.getTestCameras(), gaussians, pipeline, background, hyperparam=hyperparam)
+        if not skip_video:
+            render_set(dataset.model_path, "video", scene.loaded_iter, scene.getVideoCameras(), gaussians, pipeline, background, hyperparam=hyperparam)
 
 
 if __name__ == "__main__":
@@ -120,3 +125,4 @@ if __name__ == "__main__":
     safe_state(args.quiet)
 
     render_sets(model.extract(args), hyperparam.extract(args), opt.extract(args), args.iteration, pipeline.extract(args), args.skip_train, args.skip_test, args.skip_video)
+    # CUDA_VISIBLE_DEVICES=2 python render.py --model_path output/dynerf/coffee_martini_wo_cam13 --skip_train --configs arguments/dynerf/coffee_martini_wo_cam13.py

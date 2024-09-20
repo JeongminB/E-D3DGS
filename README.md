@@ -81,21 +81,21 @@ After running COLMAP, Neural 3D Video and Technicolor datasets are orginized as 
 
 ## Training
 
-If you want to train with 2x downsampled images, add `-r 2` to the command line.
+To resize the training image, modify `-r 2` in the command line.
 ``` bash
 # Train
-python train.py -s $GT_PATH/$SCENE --configs arguments/$DATASET/$CONFIG.py --model_path $OUTPUT_PATH --expname $DATASET/$SCENE
+python train.py -s $GT_PATH/$SCENE --configs arguments/$DATASET/$CONFIG.py --model_path $OUTPUT_PATH --expname $DATASET/$SCENE -r 2
 ``` 
 
 ## Rendering
-The current code does not yet support video rendering for visualization (e.g., spiral path rendering).
+
 
 ``` bash
 # Render test view only
 python render.py --model_path $OUTPUT_PATH --configs arguments/$DATASET/$CONFIG.py --skip_train --skip_video
 
-# Render train view only
-python render.py --model_path $OUTPUT_PATH --configs arguments/$DATASET/$CONFIG.py --skip_test --skip_video
+# Render train view, test view, and spiral path
+python render.py --model_path $OUTPUT_PATH --configs arguments/$DATASET/$CONFIG.py
 ```
 
 ## Evaluation
