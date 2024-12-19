@@ -164,7 +164,7 @@ def scene_reconstruction(dataset, opt, hyper, pipe, testing_iterations, saving_i
         Ll1 = l1_loss(image_tensor, gt_image_tensor, keepdim=True)
         Ll1_items = Ll1.detach()
         Ll1 = Ll1.mean()
-        if opt.lambda_dssim > 0. and sampled_frame_no != None or (method == "by_error" and (iteration % 10 == 0) and opt.num_multiview_ssim==0):
+        if opt.lambda_dssim > 0. and type(sampled_frame_no) != type(None) or (method == "by_error" and (iteration % 10 == 0) and opt.num_multiview_ssim==0):
             ssim_value, ssim_map = ssim(image_tensor, gt_image_tensor)
             Lssim = (1 - ssim_value) / 2
             loss = Ll1 + opt.lambda_dssim * Lssim
